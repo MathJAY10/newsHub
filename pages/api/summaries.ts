@@ -1,3 +1,4 @@
+// pages/api/summaries.ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma";
 
@@ -5,16 +6,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method !== "GET") return res.status(405).end();
 
   try {
-    const { search } = req.query;
-
+    const { id, search } = req.query;
     const where: any = {};
+
+    if (id) where.id = id.toString(); // ✅ id is a String in Prisma
     if (search) where.content = { contains: search.toString(), mode: "insensitive" };
 
     const summaries = await prisma.summary.findMany({
       where,
       include: { newspaper: { select: { title: true, fileUrl: true } } },
       orderBy: { createdAt: "desc" },
-      take: 50,
+      take: id ? undefined : 50,
     });
 
     res.status(200).json(summaries);

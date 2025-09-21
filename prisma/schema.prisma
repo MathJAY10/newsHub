@@ -1,24 +1,23 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
-
 model User {
   id            String      @id @default(cuid())
-  name          String?
   email         String?     @unique
+  name          String?
   emailVerified DateTime?
   image         String?
   accounts      Account[]
+  newspapers    Newspaper[]
   sessions      Session[]
-  newspapers    Newspaper[] // <-- this is the opposite relation
 }
 
-// NextAuth Account
 model Account {
   id                String  @id @default(cuid())
   userId            String
@@ -32,13 +31,11 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id])
+  user              User    @relation(fields: [userId], references: [id])
 
   @@unique([provider, providerAccountId])
 }
 
-// NextAuth Session
 model Session {
   id           String   @id @default(cuid())
   sessionToken String   @unique
@@ -47,7 +44,6 @@ model Session {
   user         User     @relation(fields: [userId], references: [id])
 }
 
-// Newspaper uploaded by a user
 model Newspaper {
   id         Int       @id @default(autoincrement())
   title      String
@@ -58,11 +54,10 @@ model Newspaper {
   summaries  Summary[]
 }
 
-// Generated summary for a newspaper
 model Summary {
   id          Int       @id @default(autoincrement())
-  newspaper   Newspaper @relation(fields: [newspaperId], references: [id])
   newspaperId Int
-  content     String // generated summary text
+  content     String
   createdAt   DateTime  @default(now())
+  newspaper   Newspaper @relation(fields: [newspaperId], references: [id])
 }
