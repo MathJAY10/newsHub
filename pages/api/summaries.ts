@@ -7,16 +7,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const { id, search } = req.query;
-    const where: any = {};
 
-    if (id) where.id = id.toString(); // ✅ id is a String in Prisma
+    // If id is provided, fetch a single summary
+    if (id) {
+      const summary = await prisma.summary.findUnique({
+        where: { id: Number(id) }, // ✅ Convert string to number
+        include: { newspaper: { select: { title: true, fileUrl: true } } },
+      });
+
+      if (!summary) return res.status(404).json({ error: "Summary not found" });
+
+      return res.status(200).json(summary); // single object
+    }
+
+    // Otherwise, fetch latest summaries, optionally filtered by search
+    const where: any = {};
     if (search) where.content = { contains: search.toString(), mode: "insensitive" };
 
     const summaries = await prisma.summary.findMany({
       where,
       include: { newspaper: { select: { title: true, fileUrl: true } } },
       orderBy: { createdAt: "desc" },
-      take: id ? undefined : 50,
+      take: 20,
     });
 
     res.status(200).json(summaries);
