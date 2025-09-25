@@ -1,0 +1,4 @@
+2025-09-24T17:30:44.443Z - Received PDF upload request
+2025-09-24T17:30:44.482Z - Processing file: /tmp/sjbeun2k82ds7a7zrkjbluh6i.pdf
+2025-09-24T17:30:44.484Z - File size: 13 bytes
+2025-09-24T17:30:44.521Z - PDF processing error: InvalidPDFException: Invalid PDF structure
