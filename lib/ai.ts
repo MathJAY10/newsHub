@@ -4,11 +4,25 @@ export async function summarizeWithGemini(text: string): Promise<string> {
     throw new Error("GEMINI_API_KEY is missing in env variables");
   }
 
-  try {
-    console.log("[Gemini] Starting summary request. Input length:", text.length);
+  // Construct prompt
+  const prompt = `
+Summarize the following text into a structured news summary with headings:
+1. Headline / Title
+2. Key Events / News Highlights
+3. Political Updates
+4. Economic Updates
+5. International Relations
+6. Miscellaneous / Other Important Notes
 
+Use bullet points where appropriate.
+
+Text:
+${text}
+`;
+
+  try {
     const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
       {
         method: "POST",
         headers: {
@@ -16,43 +30,32 @@ export async function summarizeWithGemini(text: string): Promise<string> {
           "X-Goog-Api-Key": process.env.GEMINI_API_KEY,
         },
         body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: `Please summarize the following text concisely:\n\n${text}`,
-                },
-              ],
-            },
-          ],
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.2,
+            maxOutputTokens: 5500, // increased to handle longer text
+          },
         }),
       }
     );
 
-    // --- Debug: log status and headers
-    console.log("[Gemini] HTTP status:", response.status);
     if (!response.ok) {
       const errText = await response.text();
-      console.error("[Gemini] API error response:", errText);
-      throw new Error(`Gemini API returned ${response.status}`);
+      console.error("Gemini API response error:", errText);
+      throw new Error(`Gemini API returned status ${response.status}`);
     }
 
     const data = await response.json();
-    console.log("[Gemini] Raw response keys:", Object.keys(data));
-
-    // ✅ Correct extraction for Gemini response
-    const summary =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? "";
-
-    console.log("[Gemini] Extracted summary length:", summary.length);
+    const summary = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
 
     if (!summary) {
-      throw new Error("Gemini returned an empty summary string");
+      console.warn("Gemini returned empty summary, returning fallback text");
+      return "Summary not available for this text.";
     }
 
     return summary;
-  } catch (err: any) {
-    console.error("[Gemini] Exception:", err.message || err);
-    throw new Error("Failed to generate summary");
+  } catch (error: any) {
+    console.error("Error in summarizeWithGemini:", error);
+    return "Summary could not be generated due to an error.";
   }
 }

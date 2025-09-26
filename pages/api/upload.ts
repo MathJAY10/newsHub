@@ -6,58 +6,51 @@ import { summarizeWithGemini } from "@/lib/ai";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 
-// Tell Next.js to let formidable handle multipart form data
 export const config = { api: { bodyParser: false } };
+
+const MAX_INPUT_CHARS = 3000;
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") return res.status(405).end();
 
   try {
-    // 1️⃣ User session
+    // 1️⃣ Check user session
     const session = await getServerSession(req, res, authOptions);
-    if (!session?.user?.id) {
-      return res.status(401).json({ error: "User not logged in" });
-    }
-    const userId: string = session.user.id;
+    if (!session?.user?.id) return res.status(401).json({ error: "User not logged in" });
+    const userId = session.user.id;
     console.log("[Upload] User ID:", userId);
 
-    // 2️⃣ Parse incoming file
+    // 2️⃣ Parse uploaded file
     const form = formidable({ multiples: false });
-
     form.parse(req, async (err, fields, files: any) => {
-      if (err) {
-        console.error("[Upload] Formidable error:", err);
-        return res.status(500).json({ error: err.message });
-      }
+      if (err) return res.status(500).json({ error: err.message });
 
-      const singleFile: File | undefined = Array.isArray(files.file)
-        ? files.file[0]
-        : files.file;
-
-      if (!singleFile) {
-        console.error("[Upload] No file received");
-        return res.status(400).json({ error: "No file uploaded" });
-      }
+      const singleFile: File | undefined = Array.isArray(files.file) ? files.file[0] : files.file;
+      if (!singleFile) return res.status(400).json({ error: "No file uploaded" });
 
       const pdfPath = (singleFile as any).filepath ?? (singleFile as any).path;
-      const pdfName =
-        (singleFile as any).originalFilename ?? "uploaded-file.pdf";
+      const pdfName = (singleFile as any).originalFilename ?? "uploaded-file.pdf";
       console.log("[Upload] File received:", pdfName, "Path:", pdfPath);
 
       try {
-        // 3️⃣ Extract text from PDF
-        const text = await extractTextFromPDF(pdfPath);
-        console.log("[Upload] Extracted text length:", text.length);
+        // 3️⃣ Extract text (with OCR fallback)
+        const fullText = await extractTextFromPDF(pdfPath);
+        if (!fullText || fullText.length < 20)
+          return res.status(400).json({ error: "PDF contains too little text to summarize" });
 
-        // 4️⃣ Generate summary using Gemini (debug version logs inside)
-        const summaryText = await summarizeWithGemini(text);
+        // 4️⃣ Truncate for Gemini
+        const textToSummarize =
+          fullText.length > MAX_INPUT_CHARS ? fullText.slice(0, MAX_INPUT_CHARS) : fullText;
+
+        // 5️⃣ Generate structured summary
+        const summaryText = await summarizeWithGemini(textToSummarize);
         console.log("[Upload] Gemini summary length:", summaryText.length);
 
-        // 5️⃣ Generate summary PDF
+        // 6️⃣ Generate summary PDF
         const summaryPDFUrl = await generateSummaryPDF(summaryText, pdfName);
         console.log("[Upload] Summary PDF created at:", summaryPDFUrl);
 
-        // 6️⃣ Save Newspaper + Summary in DB
+        // 7️⃣ Save Newspaper + Summary in DB
         const newspaper = await prisma.newspaper.create({
           data: {
             title: pdfName,
@@ -74,8 +67,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
 
         console.log("[Upload] DB save successful. Summary ID:", summary.id);
-
-        // 7️⃣ Return success
         res.status(200).json({ newspaper, summary });
       } catch (innerErr: any) {
         console.error("[Upload] Processing error:", innerErr);

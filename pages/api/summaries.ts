@@ -28,7 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       where,
       include: { newspaper: { select: { title: true, fileUrl: true } } },
       orderBy: { createdAt: "desc" },
-      take: 25,
+      take: 50,
     });
 
     res.status(200).json(summaries);
