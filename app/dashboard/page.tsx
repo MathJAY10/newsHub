@@ -33,7 +33,6 @@ const DashboardPage = () => {
   useEffect(() => {
     fetchSummaries();
     return () => {
-      // cleanup polling interval on unmount
       if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
     };
   }, []);
@@ -59,7 +58,7 @@ const DashboardPage = () => {
         if (currentProgress >= 100) {
           if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
           setUploading(false);
-          fetchSummaries(); // refresh after complete
+          fetchSummaries();
         }
       } catch (err) {
         console.error(err);
@@ -96,6 +95,17 @@ const DashboardPage = () => {
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     fetchSummaries(search);
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm("Are you sure you want to delete this summary?")) return;
+    try {
+      await fetch(`/api/summaries/${id}`, { method: "DELETE" });
+      fetchSummaries();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete summary");
+    }
   };
 
   return (
@@ -156,6 +166,7 @@ const DashboardPage = () => {
             title={s.newspaper.title}
             summary={s.content}
             pdfUrl={s.newspaper.fileUrl}
+            onDelete={() => handleDelete(s.id)} // pass delete function
           />
         ))
       ) : (

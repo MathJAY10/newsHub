@@ -5,9 +5,10 @@ interface SummaryCardProps {
   title: string;
   summary: string;
   pdfUrl: string;
+  onDelete: () => void; // new prop for delete action
 }
 
-const SummaryCard: React.FC<SummaryCardProps> = ({ title, summary, pdfUrl }) => {
+const SummaryCard: React.FC<SummaryCardProps> = ({ title, summary, pdfUrl, onDelete }) => {
   return (
     <div className="border p-4 rounded-md shadow-md mb-4 hover:shadow-lg transition">
       <h2 className="font-bold text-lg">{title}</h2>
@@ -20,6 +21,12 @@ const SummaryCard: React.FC<SummaryCardProps> = ({ title, summary, pdfUrl }) => 
           className="text-purple-600 underline"
         >
           Copy Link
+        </button>
+        <button
+          onClick={onDelete}
+          className="text-red-600 underline"
+        >
+          Delete
         </button>
       </div>
     </div>
