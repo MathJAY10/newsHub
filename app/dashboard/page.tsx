@@ -22,10 +22,9 @@ const DashboardPage = () => {
     try {
       const res = await fetch("/api/summaries");
       const data = await res.json();
-  
-      // Ensure data is an array
+
       const summariesArray: Summary[] = Array.isArray(data) ? data : data.summaries ?? [];
-  
+
       if (!searchTerm) {
         setSummaries(summariesArray);
       } else {
@@ -39,7 +38,7 @@ const DashboardPage = () => {
       setSummaries([]);
     }
   };
-  
+
   useEffect(() => {
     fetchSummaries();
     return () => {
@@ -106,74 +105,75 @@ const DashboardPage = () => {
 
   const handleDelete = async (id: number) => {
     if (!confirm("Are you sure you want to delete this summary?")) return;
-  
+
     try {
       const res = await fetch(`/api/summaries/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to delete summary");
-  
-      // Remove deleted summary locally for instant UI update
       setSummaries((prev) => prev.filter((s) => s.id !== id));
     } catch (err) {
       console.error(err);
       alert("Failed to delete summary");
     }
   };
-  
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <h1 className="text-3xl font-extrabold mb-6 text-gray-800">📄 Summary Dashboard</h1>
+    <div className="p-8 max-w-7xl mx-auto">
+      <h1 className="text-4xl font-extrabold mb-8 text-gray-900">📄 PDF Summaries Dashboard</h1>
 
-      {/* Upload PDF */}
-      <div className="mb-6 flex flex-wrap gap-3 items-center">
+      {/* Upload Section */}
+      <div className="mb-8 flex flex-wrap gap-4 items-center">
         <input
           type="file"
           accept="application/pdf"
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
           disabled={uploading}
-          className="border rounded px-3 py-1"
+          className="border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <button
           onClick={handleUpload}
-          className={`px-5 py-2 rounded text-white font-semibold ${
-            uploading ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
-          }`}
+          className={`px-6 py-2 rounded-lg font-semibold text-white shadow ${
+            uploading
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
+          } transition`}
           disabled={uploading}
         >
           {uploading ? "Uploading..." : "Upload PDF"}
         </button>
-        {uploading && (
-          <div className="w-full mt-3">
-            <div className="w-full bg-gray-200 rounded h-4">
-              <div
-                className="bg-blue-600 h-4 rounded transition-all duration-300"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-            <p className="text-sm mt-1 text-gray-700">{stageLabel}</p>
-          </div>
-        )}
       </div>
 
-      {/* Search */}
-      <form onSubmit={handleSearch} className="mb-6 flex gap-2">
+      {/* Progress Bar */}
+      {uploading && (
+        <div className="w-full mb-6">
+          <div className="relative h-5 bg-gray-200 rounded-lg overflow-hidden shadow-inner">
+            <div
+              className="absolute left-0 top-0 h-5 bg-gradient-to-r from-blue-400 to-blue-600 animate-gradient-x"
+              style={{ width: `${progress}%`, transition: "width 0.4s" }}
+            />
+          </div>
+          <p className="mt-2 text-sm font-medium text-gray-700">{stageLabel}</p>
+        </div>
+      )}
+
+      {/* Search Section */}
+      <form onSubmit={handleSearch} className="mb-8 flex gap-2">
         <input
           type="text"
-          placeholder="Search summaries by name..."
+          placeholder="Search summaries by title..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="border px-3 py-2 rounded flex-grow focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex-grow border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <button
           type="submit"
-          className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
+          className="px-5 py-2 rounded-lg bg-gray-700 text-white font-semibold hover:bg-gray-800 transition"
         >
           Search
         </button>
       </form>
 
-      {/* Summaries */}
-      <div className="grid md:grid-cols-2 gap-4">
+      {/* Summaries Grid */}
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {summaries.length > 0 ? (
           summaries.map((s) => (
             <SummaryCard
@@ -185,9 +185,25 @@ const DashboardPage = () => {
             />
           ))
         ) : (
-          <p className="text-gray-500 col-span-2">No summaries available.</p>
+          <p className="text-gray-500 col-span-full text-center">
+            No summaries available. Upload a PDF to get started!
+          </p>
         )}
       </div>
+
+      {/* Animated gradient for progress */}
+      <style>
+        {`
+        @keyframes gradient-x {
+          0% { background-position: 0% 50%; }
+          100% { background-position: 100% 50%; }
+        }
+        .animate-gradient-x {
+          background-size: 200% 100%;
+          animation: gradient-x 1.5s linear infinite;
+        }
+      `}
+      </style>
     </div>
   );
 };
