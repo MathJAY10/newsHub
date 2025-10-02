@@ -20,16 +20,26 @@ const DashboardPage = () => {
 
   const fetchSummaries = async (searchTerm: string = "") => {
     try {
-      const url = searchTerm ? `/api/summaries?search=${searchTerm}` : "/api/summaries";
-      const res = await fetch(url);
+      const res = await fetch("/api/summaries");
       const data = await res.json();
-      setSummaries(Array.isArray(data) ? data : []);
+  
+      // Ensure data is an array
+      const summariesArray: Summary[] = Array.isArray(data) ? data : data.summaries ?? [];
+  
+      if (!searchTerm) {
+        setSummaries(summariesArray);
+      } else {
+        const filtered = summariesArray.filter((s) =>
+          s.newspaper.title.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        setSummaries(filtered);
+      }
     } catch (err) {
       console.error(err);
       setSummaries([]);
     }
   };
-
+  
   useEffect(() => {
     fetchSummaries();
     return () => {
@@ -54,7 +64,6 @@ const DashboardPage = () => {
         const currentProgress = data.progress ?? 0;
         setProgress(currentProgress);
         setStageLabel(updateStageLabel(currentProgress));
-
         if (currentProgress >= 100) {
           if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
           setUploading(false);
@@ -68,7 +77,6 @@ const DashboardPage = () => {
 
   const handleUpload = async () => {
     if (!file) return alert("Select a PDF first");
-
     const formData = new FormData();
     formData.append("file", file);
 
@@ -81,7 +89,6 @@ const DashboardPage = () => {
       const jobId = data.jobId;
       if (!jobId) throw new Error("No jobId returned from upload");
       jobIdRef.current = jobId;
-
       startPollingProgress(jobId);
       setFile(null);
     } catch (err) {
@@ -99,79 +106,88 @@ const DashboardPage = () => {
 
   const handleDelete = async (id: number) => {
     if (!confirm("Are you sure you want to delete this summary?")) return;
+  
     try {
-      await fetch(`/api/summaries/${id}`, { method: "DELETE" });
-      fetchSummaries();
+      const res = await fetch(`/api/summaries/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete summary");
+  
+      // Remove deleted summary locally for instant UI update
+      setSummaries((prev) => prev.filter((s) => s.id !== id));
     } catch (err) {
       console.error(err);
       alert("Failed to delete summary");
     }
   };
+  
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Dashboard</h1>
+    <div className="p-6 max-w-6xl mx-auto">
+      <h1 className="text-3xl font-extrabold mb-6 text-gray-800">📄 Summary Dashboard</h1>
 
       {/* Upload PDF */}
-      <div className="mb-4 flex gap-2 items-center">
+      <div className="mb-6 flex flex-wrap gap-3 items-center">
         <input
           type="file"
           accept="application/pdf"
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
           disabled={uploading}
+          className="border rounded px-3 py-1"
         />
         <button
           onClick={handleUpload}
-          className={`px-4 py-1 rounded text-white ${
-            uploading ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600"
+          className={`px-5 py-2 rounded text-white font-semibold ${
+            uploading ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
           }`}
           disabled={uploading}
         >
           {uploading ? "Uploading..." : "Upload PDF"}
         </button>
-      </div>
-
-      {/* Progress Bar */}
-      {uploading && (
-        <div className="mb-4">
-          <div className="w-full bg-gray-200 rounded h-4">
-            <div
-              className="bg-blue-600 h-4 rounded"
-              style={{ width: `${progress}%`, transition: "width 0.3s" }}
-            />
+        {uploading && (
+          <div className="w-full mt-3">
+            <div className="w-full bg-gray-200 rounded h-4">
+              <div
+                className="bg-blue-600 h-4 rounded transition-all duration-300"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <p className="text-sm mt-1 text-gray-700">{stageLabel}</p>
           </div>
-          <p className="text-sm mt-1">{stageLabel}</p>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Search */}
       <form onSubmit={handleSearch} className="mb-6 flex gap-2">
         <input
           type="text"
-          placeholder="Search summaries..."
+          placeholder="Search summaries by name..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="border px-2 py-1 rounded flex-grow"
+          className="border px-3 py-2 rounded flex-grow focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
-        <button type="submit" className="bg-gray-600 text-white px-4 py-1 rounded">
+        <button
+          type="submit"
+          className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
+        >
           Search
         </button>
       </form>
 
       {/* Summaries */}
-      {summaries.length > 0 ? (
-        summaries.map((s) => (
-          <SummaryCard
-            key={s.id}
-            title={s.newspaper.title}
-            summary={s.content}
-            pdfUrl={s.newspaper.fileUrl}
-            onDelete={() => handleDelete(s.id)} // pass delete function
-          />
-        ))
-      ) : (
-        <p>No summaries available</p>
-      )}
+      <div className="grid md:grid-cols-2 gap-4">
+        {summaries.length > 0 ? (
+          summaries.map((s) => (
+            <SummaryCard
+              key={s.id}
+              title={s.newspaper.title}
+              summary={s.content}
+              pdfUrl={s.newspaper.fileUrl}
+              onDelete={() => handleDelete(s.id)}
+            />
+          ))
+        ) : (
+          <p className="text-gray-500 col-span-2">No summaries available.</p>
+        )}
+      </div>
     </div>
   );
 };
