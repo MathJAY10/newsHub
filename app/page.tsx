@@ -1,102 +1,175 @@
 'use client';
 
-import { useState } from 'react';
-import Header from './components/Header';
- // import your auth-aware Header
+import { useState } from "react";
+import Header from "./components/Header";
+import Testimonials from "@/app/components/Testimonials"; // ✅ Import the component
 
 export default function Home() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   const faqs = [
     {
-      q: 'How does the summariser work?',
-      a: 'Upload a newspaper PDF, our AI extracts the text and generates a concise summary.'
+      q: "How does the summariser work?",
+      a: "Upload a newspaper PDF, our AI extracts the text, performs OCR if needed, and generates a concise summary highlighting key points in seconds.",
     },
     {
-      q: 'Is my data secure?',
-      a: 'Yes, we store files securely and delete them after processing unless you choose to save them.'
+      q: "Is my data secure?",
+      a: "Yes! All uploaded PDFs are encrypted in transit and deleted after processing, ensuring complete privacy.",
     },
     {
-      q: 'Is there any cost?',
-      a: 'Currently the service is free for limited daily summaries.'
-    }
+      q: "Is there any cost?",
+      a: "Currently the service is free for a limited number of daily summaries. Premium options coming soon!",
+    },
   ];
 
   return (
-    <main className="bg-gray-50 min-h-screen flex flex-col">
-      <Header /> {/* Auth-aware navbar */}
+    <main className="bg-black text-white min-h-screen flex flex-col relative overflow-hidden">
+      {/* ===== GRID BACKGROUND ===== */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(138,43,226,0.15)_1px,transparent_1px),linear-gradient(to_bottom,rgba(138,43,226,0.15)_1px,transparent_1px)] bg-[size:50px_50px] pointer-events-none"></div>
 
-      {/* Padding so content not hidden under navbar */}
-      <div className="pt-20">
-        {/* ===== HERO ===== */}
-        <section className="bg-blue-600 text-white text-center py-20 px-4">
-          <h1 className="text-5xl font-extrabold mb-4">AI-Powered News Summaries</h1>
-          <p className="text-xl mb-6 max-w-2xl mx-auto">
-            Get crisp summaries of long newspaper PDFs in seconds.
-          </p>
+      {/* HEADER */}
+      <Header className="relative z-20" />
+
+      {/* HERO */}
+      <section className="relative z-10 text-center py-28 px-6 md:px-20">
+        <h1 className="text-6xl font-extrabold bg-gradient-to-r from-violet-400 to-fuchsia-500 bg-clip-text text-transparent drop-shadow-lg">
+          AI-Powered News Summaries
+        </h1>
+        <p className="text-xl mt-6 max-w-3xl mx-auto text-gray-300 leading-relaxed">
+          Skip the long reads! Upload your newspaper PDFs and get concise, accurate summaries in seconds.
+          Perfect for busy professionals, students, and anyone who wants to stay informed without the hassle.
+        </p>
+        <div className="mt-12 flex flex-col md:flex-row justify-center gap-6">
           <a
-            href="/upload"
-            className="inline-block bg-white text-blue-700 font-semibold px-6 py-3 rounded-lg shadow hover:bg-gray-100"
+            href="/"
+            className="px-10 py-4 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-semibold shadow-lg transition transform hover:-translate-y-1 hover:scale-105"
           >
-            Try It Now
+            🚀 Watch Demo
           </a>
-        </section>
+          <a
+            href="/dashboard"
+            className="px-10 py-4 rounded-xl border border-violet-500 hover:bg-violet-800/30 text-violet-300 font-semibold transition transform hover:-translate-y-1"
+          >
+           Get Started
+          </a>
+        </div>
 
-        {/* ===== FEATURES ===== */}
-        <section className="py-16 px-6 max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-10">Features</h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              { title: 'Fast Summaries', text: 'Summarise large PDFs in seconds using advanced AI.' },
-              { title: 'Clean UI', text: 'Simple, intuitive interface for effortless uploads.' },
-              { title: 'Secure Storage', text: 'Your files are encrypted and removed after processing.' }
-            ].map((f) => (
-              <div key={f.title} className="bg-white p-6 rounded-2xl shadow text-center">
-                <h3 className="text-xl font-semibold mb-2">{f.title}</h3>
-                <p className="text-gray-600">{f.text}</p>
+        {/* Hero Stats */}
+        <div className="mt-16 grid md:grid-cols-3 gap-6 text-center">
+          {[
+            { value: "99%", label: "Accuracy" },
+            { value: "5 sec", label: "Avg. Summary Time" },
+            { value: "1000+", label: "PDFs Processed" },
+          ].map((stat) => (
+            <div key={stat.label} className="bg-gray-900/50 rounded-2xl p-6 border border-violet-500/40 shadow-lg">
+              <h3 className="text-4xl font-bold text-violet-400">{stat.value}</h3>
+              <p className="text-gray-300 mt-2">{stat.label}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* FEATURES */}
+      <section className="relative z-10 py-24 px-6 max-w-6xl mx-auto">
+        <h2 className="text-4xl font-bold text-center mb-16 text-violet-400">
+          Features & Benefits
+        </h2>
+        <div className="grid md:grid-cols-3 gap-10">
+          {[
+            {
+              title: "⚡ Lightning-Fast Summaries",
+              text: "Our AI processes large PDFs in seconds with high accuracy, extracting the most important content.",
+            },
+            {
+              title: "🎨 Clean, Modern UI",
+              text: "Upload, preview, and download summaries easily with an intuitive SaaS-style interface.",
+            },
+            {
+              title: "🔒 Secure & Private",
+              text: "All files are encrypted and automatically deleted after processing to ensure your privacy.",
+            },
+            {
+              title: "📄 Multi-Format Support",
+              text: "Supports PDFs from newspapers, journals, and magazines. OCR ensures text extraction even from scans.",
+            },
+            {
+              title: "🌐 Access Anywhere",
+              text: "Works on desktop and mobile devices without installing anything — fully browser-based.",
+            },
+            {
+              title: "🧠 AI-Powered",
+              text: "Uses advanced NLP models to summarize text accurately, capturing the most relevant information.",
+            },
+          ].map((f) => (
+            <div
+              key={f.title}
+              className="bg-gradient-to-br from-gray-900 to-gray-800 border border-violet-500 rounded-2xl p-8 shadow-lg hover:shadow-violet-600/50 transition transform hover:-translate-y-2"
+            >
+              <h3 className="text-2xl font-semibold text-violet-300 mb-3">
+                {f.title}
+              </h3>
+              <p className="text-gray-400">{f.text}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* TESTIMONIALS */}
+      <Testimonials />
+
+           {/* FAQ */}
+           <section className="relative z-10 py-24 px-6 max-w-6xl mx-auto">
+        <h2 className="text-5xl md:text-6xl font-extrabold text-center mb-14 bg-gradient-to-r from-violet-400 to-fuchsia-500 bg-clip-text text-transparent drop-shadow-lg">
+          Frequently Asked Questions
+        </h2>
+        <div className="space-y-6">
+          {faqs.map((f, i) => (
+            <div
+              key={i}
+              className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl border border-violet-500/40 shadow-lg hover:border-violet-500 hover:shadow-violet-600/40 transition"
+            >
+              <button
+                className="w-full text-left px-8 py-6 font-semibold flex justify-between items-center text-white text-xl md:text-2xl hover:text-violet-300 transition"
+                onClick={() => setOpenFaq(openFaq === i ? null : i)}
+              >
+                {f.q}
+                <span className="text-violet-400 text-3xl font-bold">
+                  {openFaq === i ? "−" : "+"}
+                </span>
+              </button>
+
+              {/* Smooth expanding answer */}
+              <div
+                className={`px-8 overflow-hidden transition-all duration-500 ease-in-out ${
+                  openFaq === i
+                    ? "max-h-60 pb-6 border-t border-violet-600/30"
+                    : "max-h-0"
+                }`}
+              >
+                <p className="text-gray-300 text-lg leading-relaxed">
+                  {f.a}
+                </p>
               </div>
-            ))}
-          </div>
-        </section>
+            </div>
+          ))}
+        </div>
+      </section>
 
-        {/* ===== CREATOR NOTE ===== */}
-        <section className="bg-white py-16 px-6">
-          <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-3xl font-bold mb-4">Creator’s Note</h2>
-            <p className="text-gray-700 leading-relaxed">
-              “I built News Summariser to save time for avid readers like myself.
-              I wanted a quick way to stay informed without reading every article.
-              Hope it helps you as much as it helps me!”
-            </p>
-          </div>
-        </section>
 
-        {/* ===== FAQ ===== */}
-        <section className="py-16 px-6 max-w-3xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-8">FAQ</h2>
-          <div className="space-y-4">
-            {faqs.map((f, i) => (
-              <div key={i} className="bg-white rounded-xl shadow">
-                <button
-                  className="w-full text-left px-6 py-4 font-medium flex justify-between items-center"
-                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                >
-                  {f.q}
-                  <span>{openFaq === i ? '−' : '+'}</span>
-                </button>
-                {openFaq === i && (
-                  <div className="px-6 pb-4 text-gray-700 border-t">{f.a}</div>
-                )}
-              </div>
-            ))}
-          </div>
-        </section>
+      {/* CTA BEFORE FOOTER */}
+      <section className="relative z-10 py-16 text-center">
+        <a
+          href="/dashboard"
+          className="inline-block px-12 py-5 rounded-full bg-violet-500 text-white font-bold text-2xl shadow-xl animate-bounce hover:scale-105 hover:bg-violet-600 transition transform"
+        >
+          🚀 Start Free Trial
+        </a>
+      </section>
 
-        {/* ===== FOOTER ===== */}
-        <footer className="bg-gray-900 text-gray-300 text-center py-6">
-          © {new Date().getFullYear()} News Summariser — All rights reserved.
-        </footer>
-      </div>
+      {/* FOOTER */}
+      <footer className="relative z-10 bg-black border-t border-violet-600/30 text-gray-400 text-center py-6">
+        © {new Date().getFullYear()} News Summariser — All rights reserved.
+      </footer>
     </main>
   );
 }

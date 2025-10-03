@@ -22,9 +22,7 @@ const DashboardPage = () => {
     try {
       const res = await fetch("/api/summaries");
       const data = await res.json();
-
       const summariesArray: Summary[] = Array.isArray(data) ? data : data.summaries ?? [];
-
       if (!searchTerm) {
         setSummaries(summariesArray);
       } else {
@@ -49,7 +47,7 @@ const DashboardPage = () => {
   const updateStageLabel = (progress: number) => {
     if (progress < 20) return "Initializing...";
     if (progress < 40) return "OCR started...";
-    if (progress < 60) return "Text truncated...";
+    if (progress < 60) return "Extracting text...";
     if (progress < 80) return "Summarizing...";
     if (progress < 100) return "Generating PDF...";
     return "Done!";
@@ -105,7 +103,6 @@ const DashboardPage = () => {
 
   const handleDelete = async (id: number) => {
     if (!confirm("Are you sure you want to delete this summary?")) return;
-
     try {
       const res = await fetch(`/api/summaries/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to delete summary");
@@ -117,63 +114,64 @@ const DashboardPage = () => {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <h1 className="text-4xl font-extrabold mb-8 text-gray-900">📄 PDF Summaries Dashboard</h1>
+    <div className="min-h-screen p-8 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
+      <h1 className="text-4xl font-extrabold mb-10 text-center bg-gradient-to-r from-violet-400 to-fuchsia-500 bg-clip-text text-transparent drop-shadow-lg">
+        📄 Summary Dashboard
+      </h1>
 
-      {/* Upload Section */}
-      <div className="mb-8 flex flex-wrap gap-4 items-center">
+      {/* Upload PDF */}
+      <div className="mb-10 flex flex-wrap gap-4 items-center justify-center">
         <input
           type="file"
           accept="application/pdf"
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
           disabled={uploading}
-          className="border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border border-violet-500/50 bg-gray-800 text-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-violet-400"
         />
         <button
           onClick={handleUpload}
-          className={`px-6 py-2 rounded-lg font-semibold text-white shadow ${
+          className={`px-6 py-3 rounded-xl text-white font-semibold transition transform hover:scale-105 ${
             uploading
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
-          } transition`}
+              ? "bg-gray-500 cursor-not-allowed"
+              : "bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:shadow-lg hover:shadow-violet-500/50"
+          }`}
           disabled={uploading}
         >
-          {uploading ? "Uploading..." : "Upload PDF"}
+          {uploading ? "Uploading..." : "🚀 Upload PDF"}
         </button>
       </div>
 
-      {/* Progress Bar */}
       {uploading && (
-        <div className="w-full mb-6">
-          <div className="relative h-5 bg-gray-200 rounded-lg overflow-hidden shadow-inner">
+        <div className="w-full mt-4">
+          <div className="w-full bg-gray-800 rounded-full h-4 overflow-hidden">
             <div
-              className="absolute left-0 top-0 h-5 bg-gradient-to-r from-blue-400 to-blue-600 animate-gradient-x"
-              style={{ width: `${progress}%`, transition: "width 0.4s" }}
+              className="bg-gradient-to-r from-violet-500 to-fuchsia-500 h-4 transition-all duration-300"
+              style={{ width: `${progress}%` }}
             />
           </div>
-          <p className="mt-2 text-sm font-medium text-gray-700">{stageLabel}</p>
+          <p className="text-sm mt-2 text-center text-gray-300">{stageLabel}</p>
         </div>
       )}
 
-      {/* Search Section */}
-      <form onSubmit={handleSearch} className="mb-8 flex gap-2">
+      {/* Search */}
+      <form onSubmit={handleSearch} className="mb-10 flex gap-3 justify-center">
         <input
           type="text"
-          placeholder="Search summaries by title..."
+          placeholder="🔍 Search summaries..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="flex-grow border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border border-violet-500/40 bg-gray-800 text-gray-300 px-4 py-2 rounded-xl flex-grow focus:ring-2 focus:ring-fuchsia-500"
         />
         <button
           type="submit"
-          className="px-5 py-2 rounded-lg bg-gray-700 text-white font-semibold hover:bg-gray-800 transition"
+          className="bg-gradient-to-r from-violet-500 to-fuchsia-500 px-6 py-2 rounded-xl font-semibold text-white hover:shadow-lg hover:shadow-fuchsia-500/50 transition"
         >
           Search
         </button>
       </form>
 
-      {/* Summaries Grid */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Summaries */}
+      <div className="grid md:grid-cols-2 gap-6">
         {summaries.length > 0 ? (
           summaries.map((s) => (
             <SummaryCard
@@ -185,25 +183,9 @@ const DashboardPage = () => {
             />
           ))
         ) : (
-          <p className="text-gray-500 col-span-full text-center">
-            No summaries available. Upload a PDF to get started!
-          </p>
+          <p className="text-gray-400 text-center col-span-2">No summaries available.</p>
         )}
       </div>
-
-      {/* Animated gradient for progress */}
-      <style>
-        {`
-        @keyframes gradient-x {
-          0% { background-position: 0% 50%; }
-          100% { background-position: 100% 50%; }
-        }
-        .animate-gradient-x {
-          background-size: 200% 100%;
-          animation: gradient-x 1.5s linear infinite;
-        }
-      `}
-      </style>
     </div>
   );
 };

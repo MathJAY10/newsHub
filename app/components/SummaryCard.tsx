@@ -5,35 +5,35 @@ interface SummaryCardProps {
   title: string;
   summary: string;
   pdfUrl: string;
-  onDelete: () => void; // delete action
+  onDelete: () => void;
 }
 
 const SummaryCard: React.FC<SummaryCardProps> = ({ title, summary, pdfUrl, onDelete }) => {
   return (
-    <div className="border p-4 rounded-lg shadow-lg mb-4 hover:shadow-xl transition duration-300">
-      <h2 className="font-semibold text-xl text-gray-800">{title}</h2>
-      <p className="text-gray-600 my-2">{summary.slice(0, 150)}...</p>
-      <div className="flex gap-3 mt-2">
+    <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-violet-600/40 rounded-2xl p-6 shadow-lg hover:shadow-fuchsia-500/40 transition transform hover:-translate-y-2">
+      <h2 className="font-bold text-2xl text-violet-300 mb-3">{title}</h2>
+      <p className="text-gray-300 mb-6 leading-relaxed">{summary.slice(0, 180)}...</p>
+      <div className="flex gap-3">
         <a
           href={pdfUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+          className="px-4 py-2 bg-gradient-to-r from-violet-500 to-fuchsia-500 rounded-xl text-white font-medium hover:scale-105 transition"
         >
-          Read PDF
+          📖 Read
         </a>
         <a
           href={pdfUrl}
           download
-          className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition"
+          className="px-4 py-2 bg-green-600 rounded-xl text-white font-medium hover:bg-green-700 hover:scale-105 transition"
         >
-          Download
+          ⬇️ Download
         </a>
         <button
           onClick={onDelete}
-          className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition"
+          className="px-4 py-2 bg-red-600 rounded-xl text-white font-medium hover:bg-red-700 hover:scale-105 transition"
         >
-          Delete
+          🗑 Delete
         </button>
       </div>
     </div>
