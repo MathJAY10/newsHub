@@ -1,20 +1,22 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { prisma } from "@/lib/prisma"; // make sure prisma client exists
+import { prisma } from "@/lib/prisma";
 
-export async function summaryController(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const { search, id } = req.query;
-
+    // Get query parameters from the request
+    
+    const  search  = req.query; // req.query is the correct place
+    
     const where: any = {};
-
-    if (id) where.id = Number(id);
-    if (search) where.content = { contains: search.toString(), mode: "insensitive" };
+    if (search) {
+      where.content = { contains: search.toString(), mode: "insensitive" };
+    }
 
     const summaries = await prisma.summary.findMany({
       where,
       include: { newspaper: { select: { title: true, fileUrl: true } } },
       orderBy: { createdAt: "desc" },
-      take: 20, // limit latest 20 summaries
+      take: 20, // limit to latest 20 summaries
     });
 
     res.status(200).json(summaries);

@@ -16,6 +16,7 @@ model User {
   accounts      Account[]
   newspapers    Newspaper[]
   sessions      Session[]
+  summaries     Summary[]
 }
 
 model Account {
@@ -57,7 +58,9 @@ model Newspaper {
 model Summary {
   id          Int       @id @default(autoincrement())
   newspaperId Int
+  userId      String
   content     String
   createdAt   DateTime  @default(now())
   newspaper   Newspaper @relation(fields: [newspaperId], references: [id])
+  user        User      @relation(fields: [userId], references: [id])
 }

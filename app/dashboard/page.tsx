@@ -1,6 +1,7 @@
-"use client";
+"use client"; // if using app folder; remove if Pages Router
+
 import React, { useEffect, useState, useRef } from "react";
-import SummaryCard from "../components/SummaryCard";
+import SummaryCard from "@/app/components/SummaryCard";
 
 interface Summary {
   id: number;
@@ -8,29 +9,23 @@ interface Summary {
   newspaper: { title: string; fileUrl: string };
 }
 
-const DashboardPage = () => {
+const DashboardPage: React.FC = () => {
   const [summaries, setSummaries] = useState<Summary[]>([]);
   const [file, setFile] = useState<File | null>(null);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState<string>("");
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [stageLabel, setStageLabel] = useState("");
   const jobIdRef = useRef<string | null>(null);
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Fetch summaries from API
   const fetchSummaries = async (searchTerm: string = "") => {
     try {
-      const res = await fetch("/api/summaries");
-      const data = await res.json();
-      const summariesArray: Summary[] = Array.isArray(data) ? data : data.summaries ?? [];
-      if (!searchTerm) {
-        setSummaries(summariesArray);
-      } else {
-        const filtered = summariesArray.filter((s) =>
-          s.newspaper.title.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-        setSummaries(filtered);
-      }
+      const url = searchTerm ? `/api/summaries?search=${encodeURIComponent(searchTerm)}` : `/api/summaries`;
+      const res = await fetch(url);
+      const data: Summary[] = await res.json();
+      setSummaries(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error(err);
       setSummaries([]);
@@ -57,12 +52,12 @@ const DashboardPage = () => {
     pollIntervalRef.current = setInterval(async () => {
       try {
         const res = await fetch(`/api/progress?jobId=${jobId}`);
-        const data = await res.json();
+        const data: { progress?: number } = await res.json();
         const currentProgress = data.progress ?? 0;
         setProgress(currentProgress);
         setStageLabel(updateStageLabel(currentProgress));
-        if (currentProgress >= 100) {
-          if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+        if (currentProgress >= 100 && pollIntervalRef.current) {
+          clearInterval(pollIntervalRef.current);
           setUploading(false);
           fetchSummaries();
         }
@@ -74,6 +69,7 @@ const DashboardPage = () => {
 
   const handleUpload = async () => {
     if (!file) return alert("Select a PDF first");
+
     const formData = new FormData();
     formData.append("file", file);
 
@@ -81,10 +77,12 @@ const DashboardPage = () => {
       setUploading(true);
       setProgress(0);
       setStageLabel("Initializing...");
+
       const res = await fetch("/api/upload", { method: "POST", body: formData });
-      const data = await res.json();
+      const data: { jobId?: string } = await res.json();
       const jobId = data.jobId;
       if (!jobId) throw new Error("No jobId returned from upload");
+
       jobIdRef.current = jobId;
       startPollingProgress(jobId);
       setFile(null);
@@ -103,12 +101,15 @@ const DashboardPage = () => {
 
   const handleDelete = async (id: number) => {
     if (!confirm("Are you sure you want to delete this summary?")) return;
+
     try {
       const res = await fetch(`/api/summaries/${id}`, { method: "DELETE" });
+      console.log(res)
       if (!res.ok) throw new Error("Failed to delete summary");
       setSummaries((prev) => prev.filter((s) => s.id !== id));
     } catch (err) {
       console.error(err);
+      console.log(err)
       alert("Failed to delete summary");
     }
   };
@@ -141,6 +142,7 @@ const DashboardPage = () => {
         </button>
       </div>
 
+      {/* Progress bar */}
       {uploading && (
         <div className="w-full mt-4">
           <div className="w-full bg-gray-800 rounded-full h-4 overflow-hidden">

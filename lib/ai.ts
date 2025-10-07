@@ -1,10 +1,8 @@
-// lib/ai.ts
 export async function summarizeWithGemini(text: string): Promise<string> {
   if (!process.env.GEMINI_API_KEY) {
     throw new Error("GEMINI_API_KEY is missing in env variables");
   }
 
-  // Construct prompt
   const prompt = `
 Summarize the following text into a structured news summary with headings:
 1. Headline / Title
@@ -14,14 +12,12 @@ Summarize the following text into a structured news summary with headings:
 5. International Relations
 6. Miscellaneous / Other Important Notes
 
-Use bullet points where appropriate.
-
 Text:
 ${text}
 `;
 
   try {
-    const response = await fetch(
+    const res = await fetch(
       "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
       {
         method: "POST",
@@ -33,29 +29,27 @@ ${text}
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: {
             temperature: 0.2,
-            maxOutputTokens: 5500, // increased to handle longer text
+            maxOutputTokens: 5500,
           },
         }),
       }
     );
 
-    if (!response.ok) {
-      const errText = await response.text();
+    if (!res.ok) {
+      const errText = await res.text();
       console.error("Gemini API response error:", errText);
-      throw new Error(`Gemini API returned status ${response.status}`);
+      throw new Error(`Gemini API returned status ${res.status}`);
     }
 
-    const data = await response.json();
-    const summary = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+    const data = await res.json();
 
-    if (!summary) {
-      console.warn("Gemini returned empty summary, returning fallback text");
-      return "Summary not available for this text.";
+    return data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "Summary not available";
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("Error in summarizeWithGemini:", error.message);
+    } else {
+      console.error("Unexpected error in summarizeWithGemini:", error);
     }
-
-    return summary;
-  } catch (error: any) {
-    console.error("Error in summarizeWithGemini:", error);
     return "Summary could not be generated due to an error.";
   }
 }
