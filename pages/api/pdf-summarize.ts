@@ -18,7 +18,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const raw = files["file"];
 
     if (Array.isArray(raw)) uploaded = raw[0]; // if multiple
-    else uploaded = raw as File; // if single
+    else if (raw) uploaded = raw as File; // if single
 
     if (!uploaded) return res.status(400).json({ error: "No file uploaded" });
 
@@ -27,7 +27,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const pdfData = await pdf(dataBuffer);
       const text = pdfData.text || "No text found in PDF";
 
-      const userId = fields.userId as string;
+      const userId = Array.isArray(fields.userId) ? fields.userId[0] : fields.userId;
+      if (!userId) return res.status(400).json({ error: "User ID is required" });
 
       // Create Newspaper
       const newspaper = await prisma.newspaper.create({

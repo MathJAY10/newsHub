@@ -1,8 +1,9 @@
-// middleware.ts  (must stay in project root)
-import authMiddleware from "./middleware/authMiddleware";
+// middleware.ts
+import { clerkMiddleware } from "@clerk/nextjs/server";
 
-export default authMiddleware;
+export default clerkMiddleware();
 
+// Only protect /dashboard
 export const config = {
-  matcher: ["/dashboard"], // protect only /dashboard and subpaths
+  matcher: ["/dashboard/:path*"],
 };

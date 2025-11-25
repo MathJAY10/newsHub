@@ -1,28 +1,28 @@
 // pages/api/summaries/[id].ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma";
+import { currentUser } from "@clerk/nextjs/server";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const  id  = req.query; 
-  console.log(id)
-    console.log("Inside the delete controler ")
-  if (!id || Array.isArray(id)) {
-    return res.status(400).json({ error: "Invalid ID" });
-  }
+  const user = await currentUser();
+  if (!user) return res.status(401).json({ error: "Not authenticated" });
+
+  const id = Number(req.query.id);
 
   if (req.method === "DELETE") {
-    try {
-      const deleted = await prisma.summary.delete({
-        where: { id: Number(id) },
-      });
-      return res.status(200).json({ success: true, deleted });
-    } catch (err) {
-      console.error("Failed to delete summary:", err);
-      return res.status(500).json({ error: "Failed to delete summary" });
-    }
+    const summary = await prisma.summary.findUnique({
+      where: { id },
+    });
+
+    if (!summary) return res.status(404).json({ error: "Not found" });
+
+    if (summary.userId !== user.id)
+      return res.status(403).json({ error: "Unauthorized" });
+
+    await prisma.summary.delete({ where: { id } });
+
+    return res.status(200).json({ message: "Deleted" });
   }
 
-  // Return 405 for other methods
-  res.setHeader("Allow", ["DELETE"]);
-  res.status(405).json({ error: `Method ${req.method} not allowed` });
+  return res.status(405).json({ error: "Method Not Allowed" });
 }
