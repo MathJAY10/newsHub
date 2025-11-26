@@ -1,57 +1,74 @@
 // pages/api/upload.ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import formidable, { File } from "formidable";
-import { processUpload } from "@/controllers/uploadController";
-import { prisma } from "@/lib/prisma";
 import { getAuth } from "@clerk/nextjs/server";
+import { pdfQueue } from "@/lib/queue";
 
-export const config = { api: { bodyParser: false } };
+export const config = {
+  api: {
+    bodyParser: false, // ❗ required for formidable
+  },
+};
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== "POST")
+  // Only accept POST
+  if (req.method !== "POST") {
     return res.status(405).json({ error: "Method Not Allowed" });
+  }
 
+  // Clerk Auth
   const { userId } = getAuth(req);
-  if (!userId) return res.status(401).json({ error: "Not authenticated" });
+  if (!userId) {
+    return res.status(401).json({ error: "Not authenticated" });
+  }
 
-  const form = formidable({ multiples: false });
+  // Configure formidable with higher limits
+  const form = formidable({
+    multiples: false,
+    maxFileSize: 200 * 1024 * 1024, // ✅ 200MB upload limit
+    maxFieldsSize: 10 * 1024 * 1024, // optional
+  });
 
   form.parse(req as any, async (err, fields, files) => {
-    if (err) return res.status(500).json({ error: "File upload error" });
+    if (err) {
+      console.error("❌ Formidable parse error:", err);
+      return res.status(400).json({ error: "Invalid upload" });
+    }
 
+    // Get uploaded file
     const raw = files["file"];
-    const file: File | undefined = raw ? (Array.isArray(raw) ? raw[0] : (raw as File)) : undefined;
-    if (!file) return res.status(400).json({ error: "File missing" });
+    const uploaded: File | undefined =
+      raw ? (Array.isArray(raw) ? raw[0] : (raw as File)) : undefined;
 
-    if (!file) return res.status(400).json({ error: "File missing" });
+    if (!uploaded) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+
+    // File path in tmp directory
+    const filePath = uploaded.filepath ?? (uploaded as any).path;
+    const fileName =
+      uploaded.originalFilename ??
+      (uploaded as any).newFilename ??
+      "uploaded.pdf";
 
     try {
-      // Step 1: Process PDF
-      const { text, summaryPDFUrl, pdfName } = await processUpload(file);
+      // Add job to queue for worker to process PDF
+      const job = await pdfQueue.add(
+        "process-pdf",
+        { filePath, fileName, userId },
+        {
+          removeOnComplete: true,
+          removeOnFail: false,
+        }
+      );
 
-      // Step 2: Save Newspaper record
-      const newspaper = await prisma.newspaper.create({
-        data: {
-          title: pdfName,
-          fileUrl: file.newFilename ?? "uploaded.pdf",
-          userId,
-        },
-      });
+      console.log("📤 Job added:", job.id);
 
-      // Step 3: Save Summary record
-      const summary = await prisma.summary.create({
-        data: {
-          content: text,
-          newspaperId: newspaper.id,
-          userId,
-        },
-        include: { newspaper: true },
-      });
-
-      return res.status(200).json(summary);
+      // Respond with jobId so frontend can poll progress
+      return res.status(200).json({ jobId: job.id });
     } catch (error) {
-      console.log(error);
-      return res.status(500).json({ error: "Processing failed" });
+      console.error("❌ Queue enqueue error:", error);
+      return res.status(500).json({ error: "Failed to enqueue job" });
     }
   });
 }

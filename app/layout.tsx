@@ -1,18 +1,16 @@
-// app/layout.tsx
+import "./globals.css";          // <--- VERY IMPORTANT
 import { ClerkProvider } from "@clerk/nextjs";
-import type { ReactNode } from "react";
-import "./globals.css";
-
-export const metadata = {
-  title: "News Summariser",
-  description: "AI powered news summaries",
-};
+import RegisterSync from "./register-sync";
+import { ReactNode } from "react";
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <ClerkProvider>
       <html lang="en">
-        <body>{children}</body>
+        <body>
+          <RegisterSync />
+          {children}
+        </body>
       </html>
     </ClerkProvider>
   );
